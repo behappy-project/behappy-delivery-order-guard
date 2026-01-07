@@ -1,0 +1,29 @@
+# 外卖聚合打印与超时预警系统配置文件
+
+environment: development
+log_level: info
+
+# 订单通道缓冲区大小
+order_channel_buffer: 100
+
+# 打印队列工作协程数
+printer_workers: 5
+
+# 订单超时时间（15分钟）
+order_timeout: 15m
+
+# Redis 配置
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 4
+
+# 外卖平台配置
+platforms:
+  - name: meituan
+    enabled: true
+    interval: 10  # 每10秒模拟一个美团订单
+  - name: eleme
+    enabled: true
+    interval: 15  # 每15秒模拟一个饿了么订单
+
