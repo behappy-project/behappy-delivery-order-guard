@@ -34,3 +34,4 @@ Thumbs.db
 # Config (if contains sensitive data)
 # config.local.yaml
 
+.history
