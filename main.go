@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"behappy-delivery-order-guard/internal/config"
@@ -53,17 +54,32 @@ func main() {
 	// 创建订单通道
 	orderChan := make(chan *ingestion.Order, cfg.OrderChannelBuffer)
 
+	// 创建 WaitGroup 用于等待所有 goroutine 完成
+	var wg sync.WaitGroup
+
 	// 初始化订单接收器
 	ingester := ingestion.NewIngester(cfg, logger, orderChan)
-	go ingester.Start(ctx)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ingester.Start(ctx)
+	}()
 
 	// 初始化打印队列（Worker Pool）
 	printerPool := printer.NewPrinterPool(cfg, logger, redisClient, orderChan)
-	go printerPool.Start(ctx)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		printerPool.Start(ctx)
+	}()
 
 	// 初始化超时监控器
 	timeoutWatcher := watcher.NewTimeoutWatcher(cfg, logger, redisClient)
-	go timeoutWatcher.Start(ctx)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		timeoutWatcher.Start(ctx)
+	}()
 
 	// 等待中断信号
 	sigChan := make(chan os.Signal, 1)
@@ -76,5 +92,6 @@ func main() {
 	cancel()
 
 	// 等待所有 goroutine 完成
+	wg.Wait()
 	logger.Info("System stopped gracefully")
 }
